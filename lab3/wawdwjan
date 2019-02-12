@@ -1,0 +1,129 @@
+create_list:		# entry point for this utility routine
+
+	
+
+	addi $sp,$sp,-12 # make room on stack for 3 new items
+	
+
+	sw $s0, 8 ($sp) # push $s0 value onto stack
+	
+
+	sw $s1, 4 ($sp) # push $s1 value onto stack
+	
+
+	sw $s2, 0 ($sp) # push $s2 value onto stack
+	
+
+	
+
+
+
+	la $a0, msg91	# put msg91 address into a0
+	
+
+	li $v0,4	# system call to print
+	
+
+	syscall		#   out the msg91 string
+
+	
+
+
+
+	la $a0, msg92	# put msg92 address into a0
+	
+
+	li $v0,4	# system call to print
+	
+
+	syscall		#   out the msg92 string
+
+	
+
+
+
+	li $v0,5	# system call to read  
+	
+
+	syscall		#   in the integer
+	
+
+
+
+	addi $t1,$v0,1	# put limit value of n+1 into t1 for loop testing
+
+	
+
+
+
+	bne $v0, $zero, devam90 #if n = 0, finish up and leave
+
+	
+
+
+
+	la $a0, msg93	# put msg93 address into a0
+	
+
+	li $v0,4	# system call to print
+	
+
+	syscall		#   out the msg93 string
+
+	
+
+
+
+	move $s0, $zero # the pointer to the 0-element list will be Null
+	
+
+	j Finish90	# 
+	display_list:		# entry point for this utility routine
+
+	
+
+	addi $sp, $sp,-8 # make room on stack for 2 new items
+	
+
+	sw $s0, 4 ($sp) # push $s0 value onto stack
+	
+
+	sw $s1, 0 ($sp) # push $s1 value onto stack
+
+
+
+	
+
+	move $s0, $a0	# put the pointer to the current element in $s0
+	
+
+
+
+	la $a0, msg81	# put msg81 address into a0
+	
+
+	li $v0, 4	# system call to print
+	
+
+	syscall		#   out the msg81 string
+
+	
+
+
+
+	bne $s0, $zero, devam80	# if pointer is NULL, there is no list
+
+	
+
+
+
+	la $a0, msg82	# put msg82 address into a0
+	
+
+	li $v0, 4	# system call to print
+	
+
+	syscall		#   out the msg82 string
+	
+
+	j Return80	# done, so go home

@@ -1,0 +1,570 @@
+
+
+Part 1. Preliminary Work / Preliminary Design Report (50 points)
+CS224
+Section No.: 05
+Spring 2018
+Lab No.: 04
+Asuman Aydin/21502604
+
+1.	[5 pts] What does it mean for a processor to be a single-cycle? What are the differences between single-cycle, multi-cycle, and pipelined architectures? Briefly explain.
+
+?	It means for a processor to be a single-cycle that processor executes all instructions in one cycle. It has simple structure than other architectures. One of the differences is regardless of what is the instruction; single cycle does every instruction in the same amount of time. For example, load instructions may be longer than arithmetic instructions but they are all executed in the same amount of time. Thus, pipelined architecture is composed of the methodology of multi-cycle and single-cycle. While using the multi-cycle method, it decreases the amount of time which single-cycle wastes. When all processors compared, they do the same thing at different times. From slower to faster: single-cycle, multi-cycle, pipelined. 
+
+2.	[10 pts] In this lab, we will work on a MIPS architecture that executes instructions in a single cycle. A single-cycle processor consists of different units that can be divided into two main parts: the datapath and the control unit.  List the modules that constitute each of these parts. Explain the functions of each module with your own words [Do not copy/paste the definitions in the textbook. You may omit the adders and multiplexers in the data path for this part, and focus on the main units].
+
+?	Datapath: 
+1.	Instruction Memory: It contains the instruction address 
+2.	Register File: It includes the rs, rt, and destination register and has control of registers with enable of the RegWrite control signal. It helps to read the base address and helps signExtension to decide if the instruction is positive or negative to execute. 
+3.	Sign Extend: It determines the sign of instruction whether positive or negative according to a most significant bit of instr15:0. It takes the value and sends it to ALU.
+4.	ALU:  It takes the signExtension result and rs register value from RD1 and add them to compute the memory address. 
+5.	Data Memory: It takes the data that ALU computed and reads in to memory and transfers it to destination register head back to register file.
+?	The control Unit:
+1.	Main Decoder:  It has the control of clock cycle and execution of specific instructions. It makes it happen in proper way. The modules that it has every functional to control the instruction’s execution. It also controls keeping the values in memory and makes connection between processor and registers.
+•	Opcode
+•	MemToReg
+•	MemWrite
+•	Branch
+•	ALUSrc
+•	RegDst
+•	RegWrite
+2.	ALU Decoder: It determines which function ALU will execute so it produces the signal for it. It looks at function and opcode part to specify the signal. For example, for and function ALU signal would be 000.
+•	Funct
+•	ALUControl 
+
+3.	[15 pts] Looking at the complete processor (see the textbook, p.383) might be intimidating at first. That is why it is important that you isolate each module and analyze them individually. 
+What are the inputs and outputs of each module? Write a descriptive signature for each module that contains its inputs and outputs, as well as how many bits each input/output has. 
+
+For example:
+
+ExampleModule(input a, input[32] b, output[32] c)		
+
+means that the ExampleModule takes two inputs: a and b, consisting of 1 and 32 bits respectively; and an output c, which has 32 bits. [Accomplishing this is the key to be able to write SystemVerilog modules. Whenever you want to write a SystemVerilog module, treat it as a blackbox and ask the following questions: if this module was doing what it is supposed to be doing, (1) what would be its inputs and outputs, (2) how many bits each of them would have?
+
+?	InstructionMemory(input logic[31:0] a, output logic[31:0] rd)
+?	Pc(input logic[31:0] pcpre, output logic[31:0] pc)
+?	RegisterFile( input logic[4:0] a1, a2, a3, input logic[31:0] wd3, input logic clk, input logic we3, output logic[31:0] rd1, rd2)
+?	SignExtend(input logic[15:0] inst, output logic[31:0] signImm)
+?	DataMemory(input logic[31:0] a, wd, input clk, input we, output logic[31:0] rd)
+?	PCPlus4(input logic[31:0] pc, input logic[3:0] four, output logic[31:0] pcplus4)
+?	ALu(input logic[31:0] srcA, srcB, output logic zero, output logic[31:0] ALUResult)
+?	PcBranch(input logic signImm,  input logic[31:0] pcplus4, output logic[31:0] pcBranch)
+?	MuxPc(input logic PCSrc, input logic[31:0]  pcBranch, input logic[31:0] pcplus4, output logic logic[31:0] pcpre)
+?	muxWriteReg(input logic RegDst, input logic[4:0] a2, a3, output logic[4:0] a3final)
+?	muxRd2(input logic[31:0] rd2, signImm, output logic[31:0] srcB)
+?	muxReadData(input logic memToReg, input logic[31:0] ALUResult, readData, output logic[31:0] result)
+?	mainDecoder(input logic[5:0] opcode, output logic, memtoreg ,memwrite ,branch ,ALUsrc , regdst, regwrite, output logic[1:0] ALUop) 
+?	ALUDecoder(input logic[5:0] Funct, input logic[1:0] ALUop, output logic[2:0] ALUcontrol)
+
+4.	[20 pts] Determine the assembly language equivalent of the machine codes given in the imem module in the “imem.txt” file posted on Unilica for this lab. In the given SystemVerilog module for imem, the hex values are the MIPS machine language instructions for a small test program. Dis-assemble these codes into the equivalent assembly language instructions and give a 3-column table for the program, with one line per instruction, containing its location, machine instruction (in hex) and its assembly language equivalent. [Note: you may dis-assemble by hand or use a program for this purpose]
+
+
+INSTRUCTION	ADDRESS	MACHINE INST. IN HEX
+addi $v0, $zero, 5	8'h00	0x20020005
+addi $v1, $zero, 12	8'h04	0x2003000c
+addi $a3, $v1, 65527	8'h08	0x2067fff7
+or $a0, $a3, $v0	8'h0c	0x00e22025
+and $a1, $v1, $v0	8'h10	0x00642824
+add $a1, $a1, $a0 	8'h14	0x00a42820
+beq $a1, $a3,10	8'h18	0x10a7000a
+slt $a0, $v1, $a0	8'h1c	0x0064202a
+beq $a0, $zero, 1	8'h20	0x10800001
+addi $a1, $zero, 0	8'h24	0x20050000
+slt $a0, $a3, $v0	8'h28	0x00e2202a
+add  $a3, $a0, $a1	8'h2c	0x00853820
+sub $a3, $a3, $v0	8'h30	0x00e23822
+sw $a3,  68, $v1	8'h34	0xac670044
+lw $v0, 80, $zero	8'h38	0x8c020050
+ J  0x0000011	8'h3c	0x08000011
+addi $v0, $zero, 1	8'h40	0x20020001
+sw $v0, 84, $zero	8'h44	0xac020054
+J 0x0000012	8'h48	0x08000012
+END		
+		
+		
+
+
+##########################################
+
+
+Part 2.2
+ 
+#####################
+
+// Written by David_Harris@hmc.edu
+// Top level system including MIPS and memories
+
+module top  (input   logic 	 clk, reset,            
+	     output  logic[31:0] writedata, dataadr,            
+	     output  logic       memwrite);  
+
+   logic [31:0] pc, instr, readdata;    
+
+   // instantiate processor and memories  
+   mips mips (clk, reset, pc, instr, memwrite, dataadr, writedata, readdata);  
+   imem imem (pc[7:2], instr);  
+   dmem dmem (clk, memwrite, dataadr, writedata, readdata);
+
+endmodule
+
+
+
+// External data memory used by MIPS single-cycle processor
+
+module dmem (input  logic        clk, we,
+             input  logic[31:0]  a, wd,
+             output logic[31:0]  rd);
+
+   logic  [31:0] RAM[63:0];
+  
+   assign rd = RAM[a[31:2]];    // word-aligned  read (for lw)
+
+   always_ff @(posedge clk)
+     if (we)
+       RAM[a[31:2]] <= wd;      // word-aligned write (for sw)
+
+endmodule
+
+
+
+// single-cycle MIPS processor, with controller and datapath
+
+module mips (input  logic        clk, reset,
+             output logic[31:0]  pc,
+             input  logic[31:0]  instr,
+             output logic        memwrite,
+             output logic[31:0]  aluout, writedata,
+             input  logic[31:0]  readdata);
+
+  logic        memtoreg, pcsrc, zero, alusrc, regdst, regwrite, jump;
+  logic [2:0]  alucontrol;
+
+  controller c (instr[31:26], instr[5:0], zero, memtoreg, memwrite, pcsrc,
+                        alusrc, regdst, regwrite, jump, alucontrol);
+
+  datapath dp (clk, reset, memtoreg, pcsrc, alusrc, regdst, regwrite, jump,
+                          alucontrol, zero, pc, instr, aluout, writedata, readdata);
+
+endmodule
+module controller(input  logic[5:0] op, funct,
+                  input  logic     zero,
+                  output logic     memtoreg, memwrite,
+                  output logic     pcsrc, alusrc,
+                  output logic     regdst, regwrite,
+                  output logic     jump,
+                  output logic[2:0] alucontrol);
+
+   logic [1:0] aluop;
+   logic       branch;
+
+   maindec md (op, memtoreg, memwrite, branch, alusrc, regdst, regwrite, 
+		 jump, aluop);
+
+   aludec  ad (funct, aluop, alucontrol);
+
+   assign pcsrc = branch & zero;
+
+endmodule
+
+module maindec (input logic[5:0] op, 
+	              output logic memtoreg, memwrite, branch,
+	              output logic alusrc, regdst, regwrite, jump,
+	              output logic[1:0] aluop );
+   logic [8:0] controls;
+
+   assign {regwrite, regdst, alusrc, branch, memwrite,
+                memtoreg,  aluop, jump} = controls;
+
+  always_comb
+    case(op)
+      6'b000000: controls <= 9'b110000100; // R-type
+      6'b100011: // ??	To be filled
+      6'b101011: // ??		by the designer.
+      6'b000100: // ??  Assign the corresponding control signals
+      6'b001000: // ??		according to opcodes.
+      6'b000010: // ??
+      default:   controls <= 9'bxxxxxxxxx; // illegal op
+    endcase
+endmodule
+
+module aludec (input    logic[5:0] funct,
+               input    logic[1:0] aluop,
+               output   logic[2:0] alucontrol);
+  always_comb
+    case(aluop)
+      2'b00: alucontrol  = 3'b010;  // add  (for lw/sw/addi)
+      2'b01: alucontrol  = 3'b110;  // sub   (for beq)
+      default: case(funct)          // R-TYPE instructions
+          6'b100000: alucontrol  = 3'b010; // ADD
+          6'b100010: alucontrol  = 3'b110; // SUB
+          6'b100100: alucontrol  = 3'b000; // AND
+          6'b100101: alucontrol  = 3'b001; // OR
+          6'b101010: alucontrol  = 3'b111; // SLT
+          default:   alucontrol  = 3'bxxx; // ???
+        endcase
+    endcase
+endmodule
+
+module datapath (input  logic clk, reset, memtoreg, pcsrc, alusrc, regdst,
+                 input  logic regwrite, jump, 
+		 input  logic[2:0]  alucontrol, 
+                 output logic zero, 
+		 output logic[31:0] pc, 
+	         input  logic[31:0] instr,
+                 output logic[31:0] aluout, writedata, 
+	         input  logic[31:0] readdata);
+
+  logic [4:0]  writereg;
+  logic [31:0] pcnext, pcnextbr, pcplus4, pcbranch;
+  logic [31:0] signimm, signimmsh, srca, srcb, result;
+ 
+  // next PC logic
+  flopr #(32) pcreg(clk, reset, pcnext, pc);
+  adder       pcadd1(pc, 32'b100, pcplus4);
+  sl2         immsh(signimm, signimmsh);
+  adder       pcadd2(pcplus4, signimmsh, pcbranch);
+  mux2 #(32)  pcbrmux(pcplus4, pcbranch, pcsrc,
+                      pcnextbr);
+  mux2 #(32)  pcmux(pcnextbr, {pcplus4[31:28], 
+                    instr[25:0], 2'b00}, jump, pcnext);
+
+// register file logic
+   regfile     rf (clk, regwrite, instr[25:21], instr[20:16], writereg,
+                   result, srca, writedata);
+
+   mux2 #(5)    wrmux (instr[20:16], instr[15:11], regdst, writereg);
+   mux2 #(32)  resmux (aluout, readdata, memtoreg, result);
+   signext         se (instr[15:0], signimm);
+
+  // ALU logic
+   mux2 #(32)  srcbmux (writedata, signimm, alusrc, srcb);
+   alu         alu (srca, srcb, alucontrol, aluout, zero);
+
+endmodule
+
+
+module regfile (input    logic clk, we3, 
+                input    logic[4:0]  ra1, ra2, wa3, 
+                input    logic[31:0] wd3, 
+                output   logic[31:0] rd1, rd2);
+
+  logic [31:0] rf [31:0];
+
+  // three ported register file: read two ports combinationally
+  // write third port on rising edge of clock. Register0 hardwired to 0.
+
+  always_ff
+     if (we3) 
+         rf [wa3] <= wd3;	
+
+  assign rd1 = (ra1 != 0) ? rf [ra1] : 0;
+  assign rd2 = (ra2 != 0) ? rf[ ra2] : 0;
+
+endmodule
+
+
+module adder (input  logic[31:0] a, b,
+              output logic[31:0] y);
+     
+     assign y = a + b;
+endmodule
+
+module sl2 (input  logic[31:0] a,
+            output logic[31:0] y);
+     
+     assign y = {a[29:0], 2'b00}; // shifts left by 2
+endmodule
+
+module signext (input  logic[15:0] a,
+                output logic[31:0] y);
+              
+  assign y = {{16{a[15]}}, a};    // sign-extends 16-bit a
+endmodule
+
+// parameterized register
+module flopr #(parameter WIDTH = 8)
+              (input logic clk, reset, 
+	       input logic[WIDTH-1:0] d, 
+               output logic[WIDTH-1:0] q);
+
+  always_ff@(posedge clk, posedge reset)
+    if (reset) q <= 0; 
+    else       q <= d;
+endmodule
+
+
+// paramaterized 2-to-1 MUX
+module mux2 #(parameter WIDTH = 8)
+             (input  logic[WIDTH-1:0] d0, d1,  
+              input  logic s, 
+              output logic[WIDTH-1:0] y);
+  
+   assign y = s ? d1 : d0; 
+endmodule
+
+
+module alu(input  logic [31:0] a, b, 
+           input  logic [2:0]  alucont, 
+           output logic [31:0] result,
+           output logic zero);
+
+  // The details are to be filled..
+  // HINT: Do a lookup according to the alucont signal for result(s)
+endmodule
+
+
+// External instruction memory used by MIPS single-cycle
+// processor. It models instruction memory as a stored-program 
+// ROM, with address as input, and instruction as output
+
+
+module imem ( input logic [5:0] addr, output logic [31:0] instr);
+
+// imem is modeled as a lookup table, a stored-program byte-addressable ROM
+	always_comb
+	   case ({addr,2'b00})		   	// word-aligned fetch
+//		address		instruction
+//		-------		-----------
+		8'h00: instr = 32'h20020005;  	// disassemble, by hand 
+		8'h04: instr = 32'h2003000c;  	// or with a program,
+		8'h08: instr = 32'h2067fff7;  	// to find out what
+		8'h0c: instr = 32'h00e22025;  	// this program does!
+		8'h10: instr = 32'h00642824;
+		8'h14: instr = 32'h00a42820;
+		8'h18: instr = 32'h10a7000a;
+		8'h1c: instr = 32'h0064202a;
+		8'h20: instr = 32'h10800001;
+		8'h24: instr = 32'h20050000;
+		8'h28: instr = 32'h00e2202a;
+		8'h2c: instr = 32'h00853820;
+		8'h30: instr = 32'h00e23822;
+		8'h34: instr = 32'hac670044;
+		8'h38: instr = 32'h8c020050;
+		8'h3c: instr = 32'h08000011;
+		8'h40: instr = 32'h20020001;
+		8'h44: instr = 32'hac020054;
+		8'h48: instr = 32'h08000012;	// j 48, so it will loop here
+	     default:  instr = {32{1'bx}};	// unknown address
+	   endcase
+endmodule
+
+
+module maindec (input logic[5:0] op, 
+	              output logic memtoreg, memwrite, branch,
+	              output logic alusrc, regdst, regwrite, jump,
+	              output logic[1:0] aluop );
+   logic [8:0] controls;
+
+   assign {regwrite, regdst, alusrc, branch, memwrite,
+                memtoreg,  aluop, jump} = controls;
+
+  always_comb
+    case(op)
+      6'b000000: controls <= 9'b110000100; // R-type
+      6'b100011: controls <= 9'b101001000; //lw	
+      6'b101011: controls <= 9'b001010000;// sw		
+      6'b000100: controls <=  9'b000100001; //beq
+      6'b001000: controls <= 9'b101000000; //addi
+      6'b000010: controls  = 9'b000000100; //J
+      default:   controls <= 9'bxxxxxxxxx; // illegal op
+    endcase
+endmodule
+
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 04/06/2018 10:29:44 AM
+// Design Name: 
+// Module Name: testbench
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module testbench();
+
+   logic 	 clk, reset;            
+   logic[31:0] writedata, dataadr;            
+    logic       memwrite;
+    
+    top main(clk,reset,writedata,dataadr,memwrite);
+    
+    always
+      begin
+        clk = 1; #10;
+        clk = 0; #10;
+     end
+     
+    initial
+        begin
+            reset = 1; #10;
+            reset = 0; #10;      
+       end
+endmodule
+
+
+########################
+part 2.1
+####################
+
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 04/06/2018 08:34:27 AM
+// Design Name: 
+// Module Name: AluDataPath
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module aluDataPath(input  logic [31:0] a, b, 
+   input  logic [2:0]  alucont, 
+   output logic [31:0] result,
+   output logic zero);
+  
+  
+  always_comb
+  begin
+	case(alucont)          
+          3'b010: result <= a+b;// add
+          3'b110: result <= a-b; // sub
+          3'b000: result <= a&b; // and
+          3'b001: result <= a|b; // or
+          3'b111: 
+          if(a < b)
+            result <= 1;
+          else
+            result <= 0;
+                      
+    endcase
+     if (result == 32'h00000000)
+       zero = 1;
+     else
+       zero = 0;  
+  end
+endmodule
+
+
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 04/06/2018 08:35:31 AM
+// Design Name: 
+// Module Name: testbenchAlu
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module testbenchAlu();
+
+    //inputs
+    logic[31:0] a, b;
+    logic[2:0]  alucont;
+    
+    //outputs
+    logic[31:0] result;
+    logic zero;
+    
+    aluDataPath alu(a,b,alucont,result,zero);
+    
+    initial
+        begin
+               
+               //first
+               
+               a = 20;
+               b = 10;
+               alucont = 3'b010; // 0 + 0
+              
+                #100
+               a = 20;
+               b = 10;
+               alucont = 3'b110;
+               
+                #100
+               
+                a = 20;
+                b = 10;
+               alucont= 3'b000;
+                #100
+                
+                a = 20;
+                b = 10;
+               alucont= 3'b001;
+                #100
+                
+                a = 20;
+                b = 10;
+               alucont= 3'b111;
+                             
+
+               
+               
+               //second 
+               #100 
+               a = 10;
+               b = 20;
+               alucont = 3'b010; // 0 + 0
+               
+               #100
+                     
+               a = 10;
+               b = 20;
+               alucont = 3'b110;
+               
+               #100 
+                  
+               a = 10;
+               b = 20;
+               alucont= 3'b000;
+               
+                #100 
+                   
+               a = 10;
+               b = 20;
+               alucont= 3'b001;
+                 #100 
+                    
+               a = 10;
+               b = 20;
+               alucont= 3'b111;
+               
+            
+         end 
+   
+endmodule

@@ -1,0 +1,204 @@
+.data
+		array: .space 400	
+		x: .word 20
+		temp:	.word 0
+		
+		space : .asciiz " "
+		newLine : " \n"
+		askSize: .asciiz "Enter array size which is less than or equal to 20: \n"
+		Menu: .asciiz "\n Welcome to menu \n"
+		
+		Option1: .asciiz "1.Create an array with random numbers"
+		Option2:  .asciiz "2.	BubbleSort "
+		Option3: .asciiz "3.find max and min "
+		Option4: .asciiz "4.find the number of unique numbers"
+		Option5: .asciiz "5. Quit \n"
+		Choose: .asciiz "Enter the option you want to execute \n"
+		
+	.text
+	.globl main
+
+	main:
+	li $v0, 4        # print askSize
+  	la $a0, askSize
+ 	syscall
+	li $v0, 5
+	syscall
+	move $s0, $v0
+	la $t8, array							
+	li $t1, 0
+  		menu: 
+	li $v0,4
+	la $a0, Menu
+	syscall
+	li $v0,4
+	la $a0, Option1
+	syscall
+	li $v0,4
+	la $a0, Option2
+	syscall
+	li $v0,4
+	la $a0, Option3
+	syscall
+	li $v0,4
+	la $a0, Option4
+	syscall
+	li $v0,4
+	la $a0, Option5
+	syscall
+	li $v0,4
+	la $a0, Choose
+ 	syscall
+	li $v0, 5
+	syscall
+	move $t5, $v0
+	
+		
+
+	beq $t5,1, readArray
+	beq $t5,2, bubbleSort
+	
+	beq $t5,3, minMax
+	
+	beq $t5,4, noOfUniqueElements
+	
+	beq $t5,5, quit
+	
+	j menu
+	
+	
+  	readArray: 
+		
+		
+		beq $t1, $s0 , end
+		
+		li $a1, 100		
+  		li $v0, 42
+  		syscall
+  		
+		sw $a0, 0($t8)
+		
+		addi $t1, $t1, 1
+		addi $t8, $t8, 4				
+		j readArray
+	end:
+		la $t8, array
+		li $t1, 0
+	print:
+		beq $t1, $s0 , endPrint		
+		lw $t2, 0($t8)		
+		li $v0, 1
+		la $a0, ($t2)
+		syscall
+		
+		add $t1, $t1, 1
+		add $t8, $t8, 4
+		li $v0, 4        # print askSize
+  		la $a0, newLine
+ 		syscall
+		j print
+	endPrint:
+		j menu
+  	bubbleSort:
+  		la $a0, array
+  		li $t1, 0
+  		
+	loop: 
+		
+		bgt $t1,$s0,end	
+		addi $t1,$t1,1 
+		add $t2,$s0,$zero 
+	loop2:
+		bge $t1,$t2,loop
+		addi $t2,$t2,-1 
+	
+		mul $t4,$t1,4 
+		addi $t3,$t4,-4
+		add $t7,$t4,$a0 
+		add $t8,$t3,$a0 
+		lw $t5,0($t7)
+		lw $t6,0($t8)
+
+		bgt $t5,$t6,loop2
+
+		sw $t5,0($t8)
+		sw $t6,0($t7)
+		j loop2	
+	endloop1:
+ 		j end
+	minMax:
+		
+		
+		
+		la $t8, array
+		add $t5, $s0, $zero
+		lw $v0, ($t8)
+		move $a0, $v0
+		li $v0,1 
+		syscall
+		mul $t6,$t5,4
+		sub $t6, $t6, 4
+		add $t6, $t6, $t8
+		lw $v1, ($t6)
+		move $a0, $v1
+		li $v0,1 
+		syscall
+		
+	
+	noOfUniqueElements:
+		la $t8, array
+		
+		
+	quit:
+		li $v0, 10
+		syscall
+	
+####preliminary
+
+		.text
+		  
+	  la   $a0, hexNo
+	  move $t0, $a0
+	  jal interactWithUser
+	  jal   convertHexToDec
+	# result comes in $v0	
+	  move $v0, $s2
+	  li $v0, 1
+	  syscall
+	  j done
+	  
+interactWithUser: 
+	move $v0, askUser
+	li $v0,1 
+	syscall
+	li $v0, 5
+	syscall
+ 	move $t3,$v0
+ 	
+	  
+convertHexToDec:
+	 lb $t1, 0($t3)
+	 beqz $t1, end2
+	 bgt $t1, 48, end2	 
+	 add $s2, $s2, $t1
+	  lb $t2, 4($t0)
+	 beqz $t2, end2
+	 bgt $t2, 48, end2	 
+	 add $s2, $s2, $t2 
+	 jr $ra
+	
+end2:
+	addi $s1, $s1, -1
+	li $v0, 1
+	add $a0, $s1, $zero
+	syscall
+	 
+done:	   
+	li $v0, 10      #ends program
+	syscall
+	
+	  
+	  
+	  .data
+hexNo:   .asciiz "2B"
+askUser: .asciiz " enter an hexadecimal number in the form of a string"

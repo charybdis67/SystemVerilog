@@ -1,0 +1,662 @@
+##Part 5#### 		
+		.data
+		array: .space 400	
+		x: .word 20
+		temp:	.word 0
+		
+		space : .asciiz " "
+		newLine : " \n"
+		askSize: .asciiz "Enter array size which is less than or equal to 20: \n"
+		ask: .asciiz "Enter the elements: \n "
+		
+		input: .asciiz "Enter an element \n"
+		Menu: .asciiz "\n Welcome to menu \n"
+		
+		Option1: .asciiz " 1.	Find summation of numbers stored in the array which is greater than an input number \n"
+		Option2:  .asciiz " 2.	Find summation of even and odd numbers and display them. \n"
+		Option3: .asciiz " 3. Display the number of occurrences of the array elements divisible by a certain input number. \n"
+		Option4: .asciiz "4. Quit \n"
+		Choose: .asciiz "Enter the option you want to execute \n"
+		
+	.text
+	.globl main
+
+	main:
+		
+ 		li $v0, 4        # print askSize
+  		la $a0, askSize
+ 		 syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		la $t8, array	
+						
+		li $t1, 0
+	
+	#ask elements
+	
+	while: 
+		
+		beq $t1, $s0 , endwhile
+  		li $v0, 4                 
+  		la $a0, ask
+  		syscall
+		li $v0, 5
+		syscall
+		sw $v0, 0($t8)
+		addi $t1, $t1, 1
+		addi $t8, $t8, 4
+		
+		j while
+	endwhile:
+		la $t8, array
+		li $t1, 0
+	print:
+		beq $t1, $s0 , endPrint		
+		lw $t2, 0($t8)		
+		li $v0, 1
+		la $a0, ($t2)
+		syscall
+		add $t1, $t1, 1
+		add $t8, $t8, 4
+		j print
+  	endPrint:
+		
+		li $v0, 4                 
+  		la $a0, newLine
+  		syscall
+		la $t8, array
+		subi $t3, $s0, 1 #last index 
+		mul $t3, $t3, 4
+		add $t3, $t3, $t8 #swap
+		
+	printReverse:
+		
+ 		bge $t8, $t3 , endReverse
+  		lw $t4, 0($t8) #temporary location for beginning
+  		lw $t5, 0($t3) #
+  		sw $t5, 0($t8) #take the values of beginning to end : swap
+  		sw $t4, 0($t3)
+
+		addi $t8, $t8, 4 
+		addi $t3, $t3, -4
+		j printReverse
+		
+	endReverse:	
+		li $t1, 0
+		la $t8, array
+	print2:
+		beq $t1, $s0 , endPrint2	
+		lw $t2, 0($t8)		
+		li $v0, 1
+		la $a0, ($t2)
+		syscall
+		add $t1, $t1, 1
+		add $t8, $t8, 4
+		j print2
+	endPrint2:
+		
+	menu: 
+	li $v0,4
+	la $a0, Menu
+	syscall
+	li $v0,4
+	la $a0, Option1
+	syscall
+	li $v0,4
+	la $a0, Option2
+	syscall
+	li $v0,4
+	la $a0, Option3
+	syscall
+	li $v0,4
+	la $a0, Option4
+	syscall
+	li $v0,4
+	la $a0, Choose
+ 	syscall
+	li $v0, 5
+	syscall
+	move $t5, $v0
+	
+		
+	beq $t5,1, partA
+	
+	beq $t5,2, partB
+	
+	beq $t5,3, partC
+	
+	beq $t5,4, quit
+	
+	j menu
+	
+	
+	
+	partA:
+	li $v0, 4        # ask input
+  	la $a0, input
+ 	syscall
+	li $v0, 5
+	syscall
+	
+	move $t4, $v0
+	la $t8, array		
+	li $t1, 0 #i
+	li $t3, 0 #sum
+	
+	for: 
+		beq $t1, $s0 , end
+		lw $t2, 0($t8)
+		addi $t8, $t8, 4
+		addi $t1, $t1, 1
+		bge  $t4, $t2, for #
+		add $t3, $t3, $t2 #sum = sum + x 
+		j for
+		
+	end:
+		
+		move $a0,$t3
+ 		li $v0, 1       
+		syscall 
+ 		 
+ 		 j menu
+ 		 
+	
+	
+	partB:
+		
+ 		li $t0, 0 #sum of even is 0
+ 		li $t1, 0 #sum of odd is 0
+		li $t3, 0 #i
+		la $t8, array
+   		addi $s7, $s7, 2
+ 	forSumEvenOdd: 
+		beq $t3, $s0 , endB
+		lw $t2, 0($t8)
+		lw $t5, 0($t8)
+		addi $t3, $t3, 1
+		addi $t8, $t8, 4
+		 
+   	   	
+    		div $t2, $s7 #subtract 2 from the difference everytime till it is less than 2
+    		mfhi $t2
+   		#beq $t2, 1, if
+   		beq $t2, 0, elseSub
+   		j if	 
+    	if:
+		add $t0, $t0, $t5 #sum = sum + x
+    		j forSumEvenOdd
+	elseSub:
+		
+		add $t1, $t1, $t5
+		j forSumEvenOdd
+     		
+	endB:
+   	move $a0, $t0
+	li  $v0, 1     	      	
+   	syscall
+   	li $v0, 4                 
+  	la $a0, newLine
+  	syscall
+   	move $a0, $t1	
+   	li  $v0, 1      	
+   	syscall	 
+	  j menu
+	
+	partC:
+	
+	li $v0, 4        # ask input
+  	la $a0, input
+ 	syscall
+	li $v0, 5
+	syscall
+	
+	move $t6, $v0
+	la $t8, array		
+	li $t1, 0 #i
+	li $t3, 0 #sum
+	
+	forOccurence:
+	
+		beq $t1, $s0 ,endOccur #counting adress
+		lw $t7, 0($t8) #load the number
+		add $t1, $t1, 1
+		add $t8, $t8, 4
+		
+		bge $t7, $t6, WhileOccur
+		blt $t7, $t6, forOccurence
+	WhileOccur:	
+		div $t7, $t6 #subtract  the input from the difference everytime till it is less than input 	 
+   		mfhi $t7
+   		
+   		beq $t7, 0, do
+   		j forOccurence
+   	do:
+   		add $t3, $t3, 1
+		j forOccurence
+	endOccur:
+		
+		move $a0, $t3
+		li  $v0, 1     	      	
+   		syscall
+	
+	 j menu
+	 	
+	
+	quit:
+		li $v0, 10
+		syscall
+	
+	
+####Part 4###
+		.data
+			
+		x: .word 20		
+		space : .asciiz " "		
+		ask: .asciiz "Enter the numbers: \n "
+	
+	.text
+	.globl main
+
+	 
+	main:
+  		li $v0, 4                 
+  		la $a0, ask
+  		syscall
+		li $v0, 5
+		syscall 
+		addi $s0, $v0, 0	
+		li $v0, 4  		            		               
+  		la $a0, ask
+  		syscall
+		li $v0, 5
+		syscall
+		addi $s1, $v0, 0
+		li $v0, 4                 
+  		la $a0, ask
+  		syscall
+		li $v0, 5
+		syscall 
+		addi $s2, $v0, 0
+		li $v0, 4                 
+  		la $a0, ask
+  		syscall
+		li $v0, 5
+		syscall 
+		addi $s3, $v0, 0
+		li $v0, 4                 
+  		la $a0, ask
+  		syscall
+		li $v0, 5
+		syscall 
+		addi $s4, $v0, 0
+		
+	div  $s0, $s1
+	mflo $t1
+	mul $t2, $s2, $s3
+	sub $t3, $t1, $t2
+	
+	div  $t3, $s4
+   	mfhi $t4
+   	move $a0, $t4
+	li  $v0, 1     	      	
+   	syscall
+   
+### Part 3##
+
+##
+##	Program3.asm is a loop implementation
+##	of the Fibonacci function
+##        
+
+#################################
+#					 	#
+#		text segment		#
+#						#
+#################################
+	
+	
+	.text		
+.globl __start
+ 
+__start:			# execution starts here
+	li $a0,12		# to calculate fib(7)
+	jal fib		# call fib
+	move $a0,$v0	# print result
+	li $v0, 1
+	syscall
+
+	la $a0,endl		# print newline
+	li $v0,4
+	syscall
+
+	li $v0,10
+	syscall		# bye bye
+end:
+#------------------------------------------------
+
+
+fib:	move $v0,$a0	# initialise last element
+	blt $a0,2,done	# fib(0)=0, fib(1)=1
+
+	li $t0,0		# second last element
+	li $v0,1		# last element
+
+loop:	add $t1,$t0,$v0	# get next value
+	move $t0,$v0	# update second last
+	move $v0,$t1	# update last element
+	sub $a0,$a0,1	# decrement count
+	bgt $a0,1,loop	# exit loop when count=1
+done:	jr $ra
+
+#################################
+#					 	#
+#     	 data segment		#
+#						#
+#################################
+
+	.data
+endl:	.asciiz "\n"
+
+##
+## end of Program3.asm
+
+
+###Part2###
+##
+## Program2.asm asks user for temperature in Celsius,
+##  converts to Fahrenheit, prints the result.
+##
+##	v0 - reads in Celsius
+##	t0 - holds Fahrenheit result
+##	a0 - points to output strings
+##
+
+#################################
+#					 	#
+#		text segment		#
+#						#
+#################################
+
+	.text		
+	.globl __start	
+
+__start:
+	la $a0,prompt	# output prompt message on terminal
+	li $v0,4		# syscall 4 prints the string
+	syscall
+
+	li $v0, 5		# syscall 5 reads an integer
+	syscall
+
+	mul $t0,$v0,9	# to convert,multiply by 9,
+	div $t0,$t0,5	# divide by 5, then
+	add $t0,$t0,32	# add 32
+
+	la $a0,ans1	# print string before result
+	li $v0,4
+	syscall
+
+	move $a0,$t0	# print integer result
+	li $v0,1		# using syscall 1
+	syscall
+
+	la $a0,endl	# system call to print
+	li $v0,4		# out a newline
+	syscall
+
+	li $v0,10		# system call to exit
+	syscall		#    bye bye
+
+
+#################################
+#					 	#
+#     	 data segment		#
+#						#
+#################################
+
+	.data
+prompt:	.asciiz "Enter temperature (Celsius): "
+ans1:		.asciiz "The temperature in Fahrenheit is "
+endl:		.asciiz "\n"
+
+##
+## end of file Program2.asm
+
+
+
+##
+## Program1.asm - prints out "hello world"
+##
+##	a0 - points to the string
+##
+
+#################################
+#					 	#
+#		text segment		#
+#						#
+#################################
+
+	.text		
+	.globl __start 
+
+__start:		# execution starts here
+	la $a0,str	# put string address into a0
+	li $v0,4	# system call to print
+	syscall	#   out a string
+
+	
+	la $a0,str2	# put string address into a0
+	li $v0,4	# system call to print
+	syscall	#   out a string
+
+	li $v0,10  # system call to exit
+	syscall	#    bye bye
+
+#################################
+#					 	#
+#     	 data segment		#
+#						#
+#################################
+
+	.data
+str:	.asciiz "hello world\n"
+str2:	.asciiz "Asuman was here\n"
+n:	.word	10
+
+##
+## end of file Program1.asm
+
+
+   		
+Preliminary Work / Preliminary Design Report
+
+CS224
+Section No.: 05
+Spring 2018
+Lab No.: 01
+Asuman Aydin/21502604
+
+1. Write a MIPS program that
+Creates an array of maximum size of 20 elements that asks the user first the number of elements and then enters the elements one by one. 
+Displays array contents
+Reverses the array contents and displays the array (for example 1, 2, 3 becomes 3, 2, 1).
+
+Solution:
+		.data
+		array: .space 80	
+		x: .word 20
+		space : .asciiz " "
+		newLine: .asciiz "\n"
+		askSize: .asciiz "Enter array size which is less than or equal to 20:"
+		ask: .asciiz "Enter the elements: "
+		warning: .asciiz "the size should be less than or equal to 20 "
+	.text
+	.globl main
+
+	main:
+		li $t1, 1 
+		la $s0, array
+ 		 li $v0, 4        # print askSize
+  		la $a0, askSize
+ 		 syscall
+		li $v0, 5
+		syscall
+ 		move $s2,$v0
+ 		lw $s1, x
+		slt $t1,$s1,$s2      # checks if $s1 > $s2
+ 		li $v0, 4            # print askSize
+ 		la $a0, warning      #printing the warning 
+ 		 syscall
+		li $v0, 5
+		syscall
+		beq $t1,1,main
+
+	while: 
+		beq $t1, $s2 , endwhile
+  		li $v0, 4                 # we print space between each output
+  		la $a0, ask
+  		syscall
+		li $v0, 5
+		syscall
+		sw $v0, 0($s0)
+		addi $t1, $t1, 1
+		addi $s0, $s0, 4
+		j while
+
+	endwhile:
+	
+	print:
+		beq $t0, $s0, endPrint
+		lw $t6, array( $t0)
+		addi $t0, $t0, 4
+		li $v0, 1                 
+  		move $a0, $t6          
+  		syscall 
+		 li $v0, 4                 # we print space between each output
+  		la $a0, space
+  		syscall
+  		bgt $t0,1, print
+  		j print
+  		
+  	endPrint:
+
+		li $v0, 4                 # we print space between each output
+  		la $a0, newLine
+  		syscall
+  		
+	printReverse:
+		
+ 		addi $t1, $t1, -1         # counting  with -1
+  		addi $s0, $s0, -4         # also counting down in address
+  		li $v0, 1                 
+  		lw $a0, 0($s0)            
+  		syscall                   
+ 		 li $v0, 4                 # we print space between each output
+  		la $a0, space
+  		syscall
+  		 bgt $t1, 0, printReverse    # if there is more element, continue print
+ 		
+		#endOfProgram
+		li $v0, 10
+		syscall
+		
+2. Write a MIPS program that 
+Implements the following expression without using div. If necessary use instructions other that we have seen in the class.
+	x= (c - d) % 2
+
+Solution:
+               .data
+c:          .word       
+d:          .word      
+a:          .word       # difference of c and d
+
+number:    .asciiz "Please enter first number: "
+number2:    .asciiz "Please enter second number: "
+Result:     .asciiz "The difference of c and d is: "
+        .text
+        # I subtract c and d first 
+        #then I said if I subtract the difference with 2 in loop everytime
+        #and it stops if the differnce is less than 2 
+        #so the remainder will be either 1 or 0
+main:
+   
+    li  $v0, 4     
+    la  $a0, number    
+    syscall
+
+    #read the integer
+    li  $v0, 5     
+    la  $t0, c    
+    syscall
+    move    $t0, $v0   
+    sw  $t0, c     
+    
+    li  $v0, 4      
+    la  $a0, number2    
+    syscall
+
+    #Read second integer
+    li  $v0, 5      
+    la  $t1, d     
+    syscall
+    move    $t1, $v0   
+    sw  $t1, d    
+    la  $t2, a        
+    sub     $t2, $t0, $t1   
+    sw  $t2, a      
+   
+    la  $a0, Result 
+    li  $v0, 4    
+    syscall
+ 
+    lw  $a0, a      
+    li  $v0, 1      
+    syscall
+   
+    while :   	
+    	sub $a0, $a0, 2 #subtract 2 from the difference everytime till it is less than 2   	 
+    	li  $v0, 1     	      	
+   	 syscall
+   	bgt $a0, 2, while   	 
+    exit: 
+    
+     sw $a0, a
+     
+    #EndOfProgram
+    li  $v0, 10     
+    	   syscall
+3. Generate the object code (in hex) for the following la instructions. Show your work for the intermediate steps (please remember that la is a pseudo instruction and implemented by two instructions).
+	la	$t1, a
+	la	$t2, b
+	lui $1, 0x00001001
+	ori $9, $1, 0x00000008
+	lui $1, 0x00001001
+	ori $10, $1 , 0x00000018
+	.data
+str:	.asciiz	"\nHello\n"
+a:	.word	1, 2, 3, 4
+b:	.word   	1
+
+4. Define the following terms by providing two examples for each of them.
+a. Symbolic machine instruction: 
+These are the core instruction that we usually use for arithmetic instructions and also storage.
+-add 
+-sub
+b. Machine instruction: 
+it is the instruction that is encoded as binary numbers in a format.
+-R type
+-I type
+c. Assembler directive: 
+These are the instruction that is been used for storing the bookkeeping variables and perform them. They are starting with a period.
+-.word
+-.asciiz
+d. Pseudo instruction: 
+These instructions do not have pointed functionality in the assembly and the program does not know them but it is produced as the program understand what you are pointing to do.
+-la 
+-bgt
+
+
+	
+		
+	
